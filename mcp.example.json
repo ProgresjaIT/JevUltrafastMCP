@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "jev-ultrafast": {
+      "command": "C:/Users/User/Documents/GitHub/JevUltrafastMCP/.venv/Scripts/python.exe",
+      "args": ["-m", "jev_ultrafast_mcp.server"]
+    }
+  }
+}
