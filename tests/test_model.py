@@ -10,6 +10,7 @@ from jev_ultrafast import model
 @pytest.mark.parametrize("value", ["Warsaw", None, "", "x" * 2001, 123, {"code": "no"}])
 def test_openai_helper_validates_text_and_uses_luna(monkeypatch, value):
     def respond(request):
+        assert request.headers["Authorization"] == "Bearer test"
         body = json.loads(request.content)
         assert request.url == "https://api.openai.com/v1/responses"
         assert body["model"] == "gpt-6-luna"

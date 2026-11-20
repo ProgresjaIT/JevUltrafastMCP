@@ -17,10 +17,10 @@ cd C:\Users\User\Documents\GitHub\JevUltrafastMCP
 uv sync --locked --python 3.12
 $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD/.browsers"
 uv run playwright install chromium
-Copy-Item .env.example .env
 ```
 
-W `.env` uzupełnij klucze:
+W hoście MCP (np. AgentDashboard) skonfiguruj zmienne środowiskowe procesu serwera.
+Klucze ustaw w przeznaczonych do tego polach sekretów hosta:
 
 ```dotenv
 TYPESAFE_API_KEY=twoj_klucz_typesafe
@@ -29,8 +29,12 @@ TYPESAFE_MODEL=jev-latest
 OPENAI_MODEL=gpt-6-luna
 ```
 
-Serwer odczytuje `.env` z katalogu projektu, niezależnie od katalogu uruchomienia.
-Zmienne procesu mają pierwszeństwo. Klucz OpenAI jest potrzebny tylko przy wpisywaniu tekstu.
+Serwer korzysta wyłącznie ze zmiennych środowiskowych przekazanych przez hosta;
+nie odczytuje samodzielnie żadnego pliku `.env`. `.env.example` jest jedynie listą
+zmiennych do skonfigurowania w hoście. Istniejący lokalny `.env` nie jest używany.
+Brak `TYPESAFE_API_KEY` zatrzymuje wywołanie `browse` z komunikatem wskazującym nazwę zmiennej.
+Klucz OpenAI jest potrzebny tylko przy wpisywaniu tekstu; jego brak również daje
+czytelny błąd `OPENAI_API_KEY`, bez wpisywania danych i bez ujawniania sekretów.
 Konto OpenAI musi mieć dostęp do modelu `gpt-6-luna`. Nie wpisuj kluczy w argumentach narzędzia.
 Katalog `.browsers` jest wykrywany automatycznie; `PLAYWRIGHT_BROWSERS_PATH` może go nadpisać.
 Na Linuksie można użyć `uv run playwright install --with-deps chromium`.
@@ -56,7 +60,12 @@ Gotowy przykład: `mcp.example.json`. Dla klienta z konfiguracją TOML:
 [mcp_servers.jev-ultrafast]
 command = "C:/Users/User/Documents/GitHub/JevUltrafastMCP/.venv/Scripts/python.exe"
 args = ["-m", "jev_ultrafast_mcp.server"]
+env_vars = ["TYPESAFE_API_KEY", "OPENAI_API_KEY", "TYPESAFE_MODEL", "OPENAI_MODEL"]
 ```
+
+W przykładzie TOML `env_vars` przekazuje zmienne dostępne w środowisku hosta.
+Host musi je otrzymać przed uruchomieniem serwera. W AgentDashboard użyj konfiguracji
+environment/secrets danego serwera; samo zapisanie kluczy w pliku na dysku nie wystarczy.
 
 Alternatywnie: `uv run --directory C:/Users/User/Documents/GitHub/JevUltrafastMCP jev-ultrafast-mcp`.
 To serwer `stdio`: oczekuje komunikatów MCP, nie otwiera strony ani konsoli interaktywnej.

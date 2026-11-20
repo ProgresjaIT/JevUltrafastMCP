@@ -13,6 +13,10 @@ from .questions import NEXT_ACTION, TARGET, TEXT_VALUE
 CLIENT = httpx.Client(http2=True, timeout=25)
 
 
+class MissingAPIKeyError(ValueError):
+    """A required provider key is absent from the host's environment."""
+
+
 def post_json(url, key, body):
     for attempt in range(3):
         try:
@@ -160,8 +164,8 @@ def field_context(goal, action, page, history):
 
 def field_text(context):
     key = os.environ.get("OPENAI_API_KEY")
-    if not key:
-        raise ValueError("TYPE_TEXT needs OPENAI_API_KEY; no text is hardcoded or guessed by the executor.")
+    if not key or not key.strip():
+        raise MissingAPIKeyError("TYPE_TEXT needs OPENAI_API_KEY; no text is hardcoded or guessed by the executor.")
     model = os.environ.get("OPENAI_MODEL", "gpt-6-luna")
     started = time.perf_counter()
     try:

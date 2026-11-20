@@ -43,6 +43,7 @@ def test_browse_completes_actual_headless_form(monkeypatch, local_page):
 
     def provider(url, key, body):
         assert url == "https://api.typesafe.ai/v1/systemone"
+        assert key == "test"
         questions = body["questions"]
         state = body["state"]
         if "Saved Warsaw" in state["page"]["text"]:
@@ -118,3 +119,24 @@ def test_provider_failure_closes_browser_and_redacts_details(monkeypatch, local_
     assert "secret-api-key" not in json.dumps(result)
     assert browsers[0].closed
     assert not browsers[0].browser.is_connected()
+
+
+@pytest.mark.parametrize("key", [None, "", "   "])
+def test_missing_openai_environment_is_reported_when_typing(monkeypatch, local_page, key):
+    def provider(url, api_key, body):
+        questions = body["questions"]
+        targets = questions["type_text_target"]["criteria"]
+        return {"model": "test", "answers": {
+            "operation": answer(questions["operation"]["criteria"], "TYPE_TEXT"),
+            "type_text_target": answer(targets, next(iter(targets))),
+        }}
+
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    if key is not None:
+        monkeypatch.setenv("OPENAI_API_KEY", key)
+    monkeypatch.setattr(model, "post_json", provider)
+    result = asyncio.run(browse(local_page, "Enter Warsaw", max_steps=1))
+    assert result["status"] == "error"
+    assert "OPENAI_API_KEY" in result["error"]
+    assert result["history"] == []

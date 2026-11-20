@@ -9,11 +9,11 @@ from typing import Annotated
 from urllib.parse import urlsplit
 
 import anyio
-from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from jev_ultrafast import Agent
+from jev_ultrafast.model import MissingAPIKeyError
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("Jev Ultrafast MCP")
@@ -40,6 +40,9 @@ def _browse(url: str, goal: str, max_steps: int, timeout_seconds: int) -> dict:
             agent.command("tick")
     except TimeoutError:
         status = "timeout"
+    except MissingAPIKeyError as exc:
+        # This application-owned error names a missing variable, never its value.
+        error = str(exc)
     except Exception as exc:
         # Provider/browser exception bodies may contain credentials or private page data.
         logger.warning("Browser task failed (%s)", type(exc).__name__)
@@ -105,7 +108,6 @@ async def browse(
 
 
 def main() -> None:
-    load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
     # Prefer the repo-local browser installation when present, respecting explicit overrides.
     local_browsers = Path(__file__).resolve().parents[1] / ".browsers"
     if local_browsers.is_dir():

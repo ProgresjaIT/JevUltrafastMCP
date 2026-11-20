@@ -7,7 +7,11 @@ from mcp.client.stdio import stdio_client
 
 def test_real_stdio_handshake_and_invalid_tool_call():
     async def check():
-        parameters = StdioServerParameters(command=sys.executable, args=["-m", "jev_ultrafast_mcp.server"])
+        parameters = StdioServerParameters(
+            command=sys.executable,
+            args=["-m", "jev_ultrafast_mcp.server"],
+            env={"TYPESAFE_API_KEY": ""},
+        )
         async with stdio_client(parameters) as (read, write):
             async with ClientSession(read, write) as session:
                 initialized = await session.initialize()
@@ -18,5 +22,8 @@ def test_real_stdio_handshake_and_invalid_tool_call():
                 result = await session.call_tool("browse", {"url": "file:///secret", "goal": "Read"})
                 assert result.isError
                 assert "HTTP" in result.content[0].text
+                missing_key = await session.call_tool("browse", {"url": "https://example.com", "goal": "Read"})
+                assert missing_key.isError
+                assert "TYPESAFE_API_KEY" in missing_key.content[0].text
 
     asyncio.run(check())
